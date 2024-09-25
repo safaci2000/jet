@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	jetmysql "github.com/go-jet/jet/v2/mysql"
 	"github.com/go-jet/jet/v2/postgres"
-	"github.com/go-jet/jet/v2/tests/dbconfig"
+	"github.com/go-jet/jet/v2/tests/internal/utils/containers"
+	"github.com/go-jet/jet/v2/tests/internal/utils/repo"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/require"
 	"runtime"
@@ -15,14 +16,14 @@ import (
 	"testing"
 )
 
-var db *sql.DB
-
-var source string
-
-const MariaDB = "MariaDB"
+var (
+	db       *sql.DB
+	testRoot string
+	source   string
+)
 
 func init() {
-	source = os.Getenv("MY_SQL_SOURCE")
+	source = os.Getenv(MySqlSourceEnvKey)
 }
 
 func sourceIsMariaDB() bool {
@@ -31,9 +32,30 @@ func sourceIsMariaDB() bool {
 
 func TestMain(m *testing.M) {
 	defer profile.Start().Stop()
+	var (
+		host   string
+		port   int
+		cancel context.CancelFunc
+	)
+
+	testRoot = repo.GetTestsDirPath()
+	if sourceIsMariaDB() {
+		host, port, cancel = containers.SetupWithMariaDB(testRoot)
+		MariaDBHost = host
+		MariaDBPort = port
+
+	} else {
+		host, port, cancel = containers.SetupWithMySQL(testRoot)
+		MySqLHost = host
+		MySQLPort = port
+	}
+
+	if cancel != nil {
+		defer cancel()
+	}
 
 	var err error
-	db, err = sql.Open("mysql", dbconfig.MySQLConnectionString(sourceIsMariaDB(), ""))
+	db, err = sql.Open("mysql", ConnectionString(sourceIsMariaDB(), ""))
 	if err != nil {
 		panic("Failed to connect to test db" + err.Error())
 	}
