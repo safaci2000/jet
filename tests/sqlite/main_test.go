@@ -7,13 +7,13 @@ import (
 	"github.com/go-jet/jet/v2/internal/utils/throw"
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/sqlite"
-	"github.com/go-jet/jet/v2/tests/dbconfig"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/profile"
 	"github.com/stretchr/testify/require"
 	"os"
 	"runtime"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var db *sql.DB
@@ -23,14 +23,14 @@ func TestMain(m *testing.M) {
 	defer profile.Start().Stop()
 
 	var err error
-	db, err = sql.Open("sqlite3", "file:"+dbconfig.SakilaDBPath)
+	db, err = sql.Open("sqlite3", "file:"+SakilaDBPath)
 	throw.OnError(err)
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("ATTACH DATABASE '%s' as 'chinook';", dbconfig.ChinookDBPath))
+	_, err = db.Exec(fmt.Sprintf("ATTACH DATABASE '%s' as 'chinook';", ChinookDBPath))
 	throw.OnError(err)
 
-	sampleDB, err = sql.Open("sqlite3", dbconfig.TestSampleDBPath)
+	sampleDB, err = sql.Open("sqlite3", TestSampleDBPath)
 	throw.OnError(err)
 
 	ret := m.Run()
