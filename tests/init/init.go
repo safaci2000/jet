@@ -122,19 +122,22 @@ func initMySQLDB(isMariaDB bool) error {
 		cmdLine := fmt.Sprintf("mysql -h %s -P %d -u %s -p%s %s < %s", host, port, user, pass, dbName,
 			"./testdata/init/mysql/"+dbName+".sql")
 
-		fmt.Println(cmdLine)
+		priorCmd := fmt.Sprintf("echo 'SET GLOBAL log_bin_trust_function_creators = 1;'| mysql -h %s -P %d -u %s -p%s %s", host, port, user, pass, dbName)
+		for _, cmdLine := range []string{priorCmd, cmdLine} {
+			fmt.Println(cmdLine)
 
-		cmd := exec.Command("sh", "-c", cmdLine)
+			cmd := exec.Command("sh", "-c", cmdLine)
 
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Stdout = os.Stdout
 
-		err := cmd.Run()
-		if err != nil {
-			return fmt.Errorf("failed to initialize mysql database %s: %w", dbName, err)
+			err := cmd.Run()
+			if err != nil {
+				return fmt.Errorf("failed to initialize mysql database %s: %w", dbName, err)
+			}
 		}
 
-		err = mysql.Generate("./.gentestdata/mysql", mysql.DBConnection{
+		err := mysql.Generate("./.gentestdata/mysql", mysql.DBConnection{
 			Host:     host,
 			Port:     port,
 			User:     user,
