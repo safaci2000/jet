@@ -119,7 +119,7 @@ func initMySQLDB(isMariaDB bool) error {
 			pass = dbconfig.MariaDBPassword
 		}
 
-		cmdLine := fmt.Sprintf("mysql -h %s -P %d -u %s -p%s %s < %s", host, port, user, pass, dbName,
+		cmdLine := fmt.Sprintf("mysql -h %s -P %d -u %s -p%s < %s", host, port, "root", pass,
 			"./testdata/init/mysql/"+dbName+".sql")
 
 		fmt.Println(cmdLine)
