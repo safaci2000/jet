@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/go-jet/jet/v2/generator/metadata"
-	mysql2 "github.com/go-jet/jet/v2/generator/mysql"
+	jetMysql "github.com/go-jet/jet/v2/generator/mysql"
 	"github.com/go-jet/jet/v2/generator/template"
 	"github.com/go-jet/jet/v2/internal/3rdparty/snaker"
 	"github.com/go-jet/jet/v2/internal/utils/dbidentifier"
-	postgres2 "github.com/go-jet/jet/v2/postgres"
-	"github.com/go-jet/jet/v2/tests/dbconfig"
-	file2 "github.com/go-jet/jet/v2/tests/internal/utils/file"
+	jetPostgres "github.com/go-jet/jet/v2/postgres"
+	"github.com/go-jet/jet/v2/tests/internal/utils/file"
 	"github.com/stretchr/testify/require"
 	"path"
 	"testing"
@@ -25,31 +24,31 @@ var defaultViewSQLBuilderFilePath = path.Join(tempTestDir, "dvds/view")
 var defaultEnumSQLBuilderFilePath = path.Join(tempTestDir, "dvds/enum")
 var defaultActorSQLBuilderFilePath = path.Join(tempTestDir, "dvds/table", "actor.go")
 
-func dbConnection(dbName string) mysql2.DBConnection {
+func dbConnection(dbName string) jetMysql.DBConnection {
 	if sourceIsMariaDB() {
-		return mysql2.DBConnection{
-			Host:     dbconfig.MariaDBHost,
-			Port:     dbconfig.MariaDBPort,
-			User:     dbconfig.MariaDBUser,
-			Password: dbconfig.MariaDBPassword,
+		return jetMysql.DBConnection{
+			Host:     MariaDBHost,
+			Port:     MariaDBPort,
+			User:     MariaDBUser,
+			Password: MariaDBPassword,
 			DBName:   dbName,
 		}
 	}
 
-	return mysql2.DBConnection{
-		Host:     dbconfig.MySqLHost,
-		Port:     dbconfig.MySQLPort,
-		User:     dbconfig.MySQLUser,
-		Password: dbconfig.MySQLPassword,
+	return jetMysql.DBConnection{
+		Host:     MySqLHost,
+		Port:     MySQLPort,
+		User:     MySQLUser,
+		Password: MySQLPassword,
 		DBName:   dbName,
 	}
 }
 
 func TestGeneratorTemplate_Schema_ChangePath(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).UsePath("new/schema/path")
 			}),
@@ -57,17 +56,17 @@ func TestGeneratorTemplate_Schema_ChangePath(t *testing.T) {
 
 	require.Nil(t, err)
 
-	file2.Exists(t, tempTestDir, "new/schema/path/model/actor.go")
-	file2.Exists(t, tempTestDir, "new/schema/path/table/actor.go")
-	file2.Exists(t, tempTestDir, "new/schema/path/view/actor_info.go")
-	file2.Exists(t, tempTestDir, "new/schema/path/enum/film_rating.go")
+	file.Exists(t, tempTestDir, "new/schema/path/model/actor.go")
+	file.Exists(t, tempTestDir, "new/schema/path/table/actor.go")
+	file.Exists(t, tempTestDir, "new/schema/path/view/actor_info.go")
+	file.Exists(t, tempTestDir, "new/schema/path/enum/film_rating.go")
 }
 
 func TestGeneratorTemplate_Model_SkipGeneration(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseModel(template.Model{
@@ -78,17 +77,17 @@ func TestGeneratorTemplate_Model_SkipGeneration(t *testing.T) {
 
 	require.Nil(t, err)
 
-	file2.NotExists(t, defaultActorModelFilePath)
-	file2.Exists(t, defaultTableSQLBuilderFilePath, "actor.go")
-	file2.Exists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
-	file2.Exists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
+	file.NotExists(t, defaultActorModelFilePath)
+	file.Exists(t, defaultTableSQLBuilderFilePath, "actor.go")
+	file.Exists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
+	file.Exists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
 }
 
 func TestGeneratorTemplate_SQLBuilder_SkipGeneration(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseSQLBuilder(template.SQLBuilder{
@@ -99,19 +98,19 @@ func TestGeneratorTemplate_SQLBuilder_SkipGeneration(t *testing.T) {
 
 	require.Nil(t, err)
 
-	file2.Exists(t, defaultActorModelFilePath)
-	file2.NotExists(t, defaultTableSQLBuilderFilePath, "actor.go")
-	file2.NotExists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
-	file2.NotExists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
+	file.Exists(t, defaultActorModelFilePath)
+	file.NotExists(t, defaultTableSQLBuilderFilePath, "actor.go")
+	file.NotExists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
+	file.NotExists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
 }
 
 func TestGeneratorTemplate_Model_ChangePath(t *testing.T) {
 	const newModelPath = "/new/model/path"
 
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseModel(template.DefaultModel().UsePath(newModelPath))
@@ -119,17 +118,17 @@ func TestGeneratorTemplate_Model_ChangePath(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	file2.Exists(t, tempTestDir, "dvds", newModelPath, "actor.go")
-	file2.NotExists(t, defaultActorModelFilePath)
+	file.Exists(t, tempTestDir, "dvds", newModelPath, "actor.go")
+	file.NotExists(t, defaultActorModelFilePath)
 }
 
 func TestGeneratorTemplate_SQLBuilder_ChangePath(t *testing.T) {
 	const newModelPath = "/new/sql-builder/path"
 
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseSQLBuilder(template.DefaultSQLBuilder().UsePath(newModelPath))
@@ -137,20 +136,20 @@ func TestGeneratorTemplate_SQLBuilder_ChangePath(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	file2.Exists(t, tempTestDir, "dvds", newModelPath, "table", "actor.go")
-	file2.Exists(t, tempTestDir, "dvds", newModelPath, "view", "actor_info.go")
-	file2.Exists(t, tempTestDir, "dvds", newModelPath, "enum", "film_rating.go")
+	file.Exists(t, tempTestDir, "dvds", newModelPath, "table", "actor.go")
+	file.Exists(t, tempTestDir, "dvds", newModelPath, "view", "actor_info.go")
+	file.Exists(t, tempTestDir, "dvds", newModelPath, "enum", "film_rating.go")
 
-	file2.NotExists(t, defaultTableSQLBuilderFilePath, "actor.go")
-	file2.NotExists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
-	file2.NotExists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
+	file.NotExists(t, defaultTableSQLBuilderFilePath, "actor.go")
+	file.NotExists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
+	file.NotExists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
 }
 
 func TestGeneratorTemplate_Model_RenameFilesAndTypes(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseModel(template.DefaultModel().
@@ -174,21 +173,21 @@ func TestGeneratorTemplate_Model_RenameFilesAndTypes(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	actor := file2.Exists(t, defaultModelPath, "dvds_actor.go")
+	actor := file.Exists(t, defaultModelPath, "dvds_actor.go")
 	require.Contains(t, actor, "type ActorTable struct {")
 
-	actorInfo := file2.Exists(t, defaultModelPath, "dvds_actor_info_view.go")
+	actorInfo := file.Exists(t, defaultModelPath, "dvds_actor_info_view.go")
 	require.Contains(t, actorInfo, "type ActorInfoView struct {")
 
-	mpaaRating := file2.Exists(t, defaultModelPath, "film_rating_enum.go")
+	mpaaRating := file.Exists(t, defaultModelPath, "film_rating_enum.go")
 	require.Contains(t, mpaaRating, "type FilmRatingEnum string")
 }
 
 func TestGeneratorTemplate_Model_SkipTableAndEnum(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseModel(template.DefaultModel().
@@ -207,16 +206,16 @@ func TestGeneratorTemplate_Model_SkipTableAndEnum(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	file2.NotExists(t, defaultModelPath, "actor.go")
-	file2.Exists(t, defaultModelPath, "actor_info.go")
-	file2.NotExists(t, defaultModelPath, "film_rating.go")
+	file.NotExists(t, defaultModelPath, "actor.go")
+	file.Exists(t, defaultModelPath, "actor_info.go")
+	file.NotExists(t, defaultModelPath, "film_rating.go")
 }
 
 func TestGeneratorTemplate_SQLBuilder_SkipTableAndEnum(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseSQLBuilder(template.DefaultSQLBuilder().
@@ -240,16 +239,16 @@ func TestGeneratorTemplate_SQLBuilder_SkipTableAndEnum(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	file2.NotExists(t, defaultTableSQLBuilderFilePath, "actor.go")
-	file2.NotExists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
-	file2.NotExists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
+	file.NotExists(t, defaultTableSQLBuilderFilePath, "actor.go")
+	file.NotExists(t, defaultViewSQLBuilderFilePath, "actor_info.go")
+	file.NotExists(t, defaultEnumSQLBuilderFilePath, "film_rating.go")
 }
 
 func TestGeneratorTemplate_SQLBuilder_ChangeTypeAndFileName(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseSQLBuilder(template.DefaultSQLBuilder().
@@ -275,21 +274,21 @@ func TestGeneratorTemplate_SQLBuilder_ChangeTypeAndFileName(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	actor := file2.Exists(t, defaultTableSQLBuilderFilePath, "dvds_actor_table.go")
+	actor := file.Exists(t, defaultTableSQLBuilderFilePath, "dvds_actor_table.go")
 	require.Contains(t, actor, "type ActorTableSQLBuilder struct {")
 	require.Contains(t, actor, "var T_Actor = newActorTableSQLBuilder(\"dvds\", \"actor\", \"\")")
-	actorInfo := file2.Exists(t, defaultViewSQLBuilderFilePath, "dvds_actor_info_view.go")
+	actorInfo := file.Exists(t, defaultViewSQLBuilderFilePath, "dvds_actor_info_view.go")
 	require.Contains(t, actorInfo, "type ActorInfoViewSQLBuilder struct {")
 	require.Contains(t, actorInfo, "var V_ActorInfo = newActorInfoViewSQLBuilder(\"dvds\", \"actor_info\", \"\")")
-	mpaaRating := file2.Exists(t, defaultEnumSQLBuilderFilePath, "dvds_film_rating_enum.go")
+	mpaaRating := file.Exists(t, defaultEnumSQLBuilderFilePath, "dvds_film_rating_enum.go")
 	require.Contains(t, mpaaRating, "var FilmRatingEnumSQLBuilder = &struct {")
 }
 
 func TestGeneratorTemplate_SQLBuilder_DefaultAlias(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseSQLBuilder(template.DefaultSQLBuilder().
@@ -304,16 +303,16 @@ func TestGeneratorTemplate_SQLBuilder_DefaultAlias(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	actor := file2.Exists(t, defaultTableSQLBuilderFilePath, "actor.go")
+	actor := file.Exists(t, defaultTableSQLBuilderFilePath, "actor.go")
 	require.Contains(t, actor, "var Actor = newActorTable(\"dvds\", \"actor\", \"actors\")")
 }
 
 func TestGeneratorTemplate_Model_AddTags(t *testing.T) {
 
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseModel(template.DefaultModel().
@@ -342,19 +341,19 @@ func TestGeneratorTemplate_Model_AddTags(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	actor := file2.Exists(t, defaultActorModelFilePath)
+	actor := file.Exists(t, defaultActorModelFilePath)
 	require.Contains(t, actor, "ActorID    uint16    `sql:\"primary_key\" json:\"actorID\" xml:\"actor_id\"`")
 	require.Contains(t, actor, "FirstName  string    `json:\"firstName\" xml:\"first_name\"`")
 
-	actorInfo := file2.Exists(t, defaultModelPath, "actor_info.go")
+	actorInfo := file.Exists(t, defaultModelPath, "actor_info.go")
 	require.Contains(t, actorInfo, "ActorID   uint16 `sql:\"primary_key\"`")
 }
 
 func TestGeneratorTemplate_Model_ChangeFieldTypes(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseModel(template.DefaultModel().
@@ -386,7 +385,7 @@ func TestGeneratorTemplate_Model_ChangeFieldTypes(t *testing.T) {
 
 	require.Nil(t, err)
 
-	data := file2.Exists(t, defaultModelPath, "film.go")
+	data := file.Exists(t, defaultModelPath, "film.go")
 	require.Contains(t, data, "\"database/sql\"")
 	require.Contains(t, data, "Description        sql.NullString")
 	require.Contains(t, data, "ReleaseYear        *int16")
@@ -394,10 +393,10 @@ func TestGeneratorTemplate_Model_ChangeFieldTypes(t *testing.T) {
 }
 
 func TestGeneratorTemplate_SQLBuilder_ChangeColumnTypes(t *testing.T) {
-	err := mysql2.Generate(
+	err := jetMysql.Generate(
 		tempTestDir,
 		dbConnection("dvds"),
-		template.Default(postgres2.Dialect).
+		template.Default(jetPostgres.Dialect).
 			UseSchema(func(schemaMetaData metadata.Schema) template.Schema {
 				return template.DefaultSchema(schemaMetaData).
 					UseSQLBuilder(template.DefaultSQLBuilder().
@@ -419,6 +418,6 @@ func TestGeneratorTemplate_SQLBuilder_ChangeColumnTypes(t *testing.T) {
 
 	require.Nil(t, err)
 
-	actor := file2.Exists(t, defaultActorSQLBuilderFilePath)
+	actor := file.Exists(t, defaultActorSQLBuilderFilePath)
 	require.Contains(t, actor, "ActorID    postgres.ColumnString")
 }

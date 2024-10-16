@@ -58,7 +58,6 @@ func TestUUID(t *testing.T) {
 			Raw("unhex(replace('dc8daae3-b83b-11e9-8eb4-98ded00c39c6','-',''))").AS("bin_uuid"),
 		).LIMIT(1)
 
-	//fmt.Println(query.DebugSql())
 
 	var dest struct {
 		UUID    uuid.UUID
