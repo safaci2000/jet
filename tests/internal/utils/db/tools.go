@@ -3,12 +3,13 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 )
 
 func ExecFile(db *sql.DB, sqlFilePath string) error {
-	testSampleSql, err := os.ReadFile(sqlFilePath)
+	testSampleSql, err := os.ReadFile(sqlFilePath) // #nosec G304
 	if err != nil {
 		return fmt.Errorf("failed to read sql file - %s: %w", sqlFilePath, err)
 	}
@@ -35,7 +36,10 @@ func ExecInTx(db *sql.DB, f func(tx *sql.Tx) error) error {
 	err = f(tx)
 
 	if err != nil {
-		tx.Rollback()
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return errors.Join(err, rollbackErr)
+		}
 		return err
 	}
 

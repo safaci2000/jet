@@ -10,17 +10,17 @@ import (
 	"github.com/go-jet/jet/v2/generator/sqlite"
 	"github.com/go-jet/jet/v2/internal/utils/errfmt"
 	"github.com/go-jet/jet/v2/tests/internal/utils/containers"
-	dbTools "github.com/go-jet/jet/v2/tests/internal/utils/db"
+	"github.com/go-jet/jet/v2/tests/internal/utils/db"
 	"github.com/go-jet/jet/v2/tests/internal/utils/repo"
 	mysqlTest "github.com/go-jet/jet/v2/tests/mysql"
-	sqlite2 "github.com/go-jet/jet/v2/tests/sqlite"
+	pgTest "github.com/go-jet/jet/v2/tests/postgres"
+	sqliteTest "github.com/go-jet/jet/v2/tests/sqlite"
 	"log/slog"
 	"os"
 	"path"
 	"strings"
 	"time"
 
-	pgTest "github.com/go-jet/jet/v2/tests/postgres"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4/stdlib"
 
@@ -120,15 +120,15 @@ func main() {
 }
 
 func initSQLiteDB() error {
-	err := sqlite.GenerateDSN(sqlite2.SakilaDBPath, repo.GetTestsFilePath("./.gentestdata/sqlite/sakila"))
+	err := sqlite.GenerateDSN(sqliteTest.SakilaDBPath, repo.GetTestsFilePath("./.gentestdata/sqlite/sakila"))
 	if err != nil {
 		return fmt.Errorf("failed to generate sqlite sakila database types: %w", err)
 	}
-	err = sqlite.GenerateDSN(sqlite2.ChinookDBPath, repo.GetTestsFilePath("./.gentestdata/sqlite/chinook"))
+	err = sqlite.GenerateDSN(sqliteTest.ChinookDBPath, repo.GetTestsFilePath("./.gentestdata/sqlite/chinook"))
 	if err != nil {
 		return fmt.Errorf("failed to generate sqlite chinook database types: %w", err)
 	}
-	err = sqlite.GenerateDSN(sqlite2.TestSampleDBPath, repo.GetTestsFilePath("./.gentestdata/sqlite/test_sample"))
+	err = sqlite.GenerateDSN(sqliteTest.TestSampleDBPath, repo.GetTestsFilePath("./.gentestdata/sqlite/test_sample"))
 	if err != nil {
 		return fmt.Errorf("failed to generate sqlite test_sample database types: %w", err)
 	}
@@ -210,11 +210,11 @@ func initPostgresDB(dbType string) error {
 	if cancelFn != nil {
 		defer cancelFn()
 	}
-	db, err := sql.Open("postgres", connectionString)
+	dbConnection, err := sql.Open("postgres", connectionString)
 	if err != nil {
-		return fmt.Errorf("failed to open '%s' db connection '%s': %w", dbType, connectionString, err)
+		return fmt.Errorf("failed to open '%s' dbConnection connection '%s': %w", dbType, connectionString, err)
 	}
-	defer db.Close()
+	defer dbConnection.Close()
 
 	schemaNames := []string{
 		"northwind",
@@ -227,7 +227,7 @@ func initPostgresDB(dbType string) error {
 	for _, schemaName := range schemaNames {
 		fmt.Println("\nInitializing", schemaName, "schema...")
 
-		err = dbTools.ExecFile(db, path.Join(repoDir, fmt.Sprintf("./testdata/init/%s/%s.sql", dbType, schemaName)))
+		err = db.ExecFile(dbConnection, path.Join(repoDir, fmt.Sprintf("./testdata/init/%s/%s.sql", dbType, schemaName)))
 		if err != nil {
 			return fmt.Errorf("failed to execute sql file: %w", err)
 		}

@@ -27,7 +27,7 @@ func SetupWithMariaDB(testRoot string) (string, int, context.CancelFunc) {
 	}
 	initFiles := make([]testcontainers.ContainerFile, 0)
 	for _, file := range files {
-		r, openFileErr := os.Open(filepath.Join(localBase, file.Name()))
+		r, openFileErr := os.Open(filepath.Join(localBase, file.Name())) // #nosec G304
 		if openFileErr != nil {
 			log.Fatalf("unable to open file %s", file.Name())
 		}
